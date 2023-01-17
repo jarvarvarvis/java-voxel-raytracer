@@ -18,4 +18,4 @@ The Java source code is located in src/main/java. <br>
 The shader source code is located in src/resources/shaders/. <br>
 
 ## Example
-![grid-32x32](screenshots/grid-32x32.png)
+![grid-32x32](screenshots/grid-32x32x32.png)
