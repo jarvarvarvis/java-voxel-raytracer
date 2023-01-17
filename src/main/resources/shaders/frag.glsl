@@ -85,7 +85,7 @@ bool intersectsWorld(vec3 rayOrigin, vec3 rayDirectionInv, out float tNear, out 
 // Implementation based on "A Fast Voxel Traversal Algorithm for Ray Tracing"
 // by John Amanatides and Andrew Woo.
 // Paper: http://www.cse.yorku.ca/~amana/research/grid.pdf
-bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, out vec4 color, int outerSideNormalAxis, out int normalAxis) {
+bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, out vec4 color, int outerSideNormalAxis, out int normalAxis, out float distance) {
     // Increase tNear by small amount to start *inside* the world
     // If we are inside the bounding box of the world, start at the ray origin
     tNear = max(0, tNear) + 0.001;
@@ -96,22 +96,28 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
     ivec3 lastVoxel = ivec3(floor(rayEnd));
     ivec3 step = ivec3(sign(rayDirection));
 
-    vec3 near = vec3(
+    vec3 nearestSquareSide = vec3(
         step.x >= 0 ? (currentVoxel.x + 1.) - rayOrigin.x : rayOrigin.x - currentVoxel.x,
         step.y >= 0 ? (currentVoxel.y + 1.) - rayOrigin.y : rayOrigin.y - currentVoxel.y,
         step.z >= 0 ? (currentVoxel.z + 1.) - rayOrigin.z : rayOrigin.z - currentVoxel.z
     );
-    vec3 tMax = vec3(
-        rayDirection.x != 0 ? near.x / rayDirection.x : tFar,
-        rayDirection.y != 0 ? near.y / rayDirection.y : tFar,
-        rayDirection.z != 0 ? near.z / rayDirection.z : tFar
+
+    // How far along the ray we must travel to cross the x,y or z grid line
+    vec3 gridCrossDistance = vec3(
+        rayDirection.x != 0 ? nearestSquareSide.x / rayDirection.x : tFar,
+        rayDirection.y != 0 ? nearestSquareSide.y / rayDirection.y : tFar,
+        rayDirection.z != 0 ? nearestSquareSide.z / rayDirection.z : tFar
     );
-    vec3 tDelta = vec3(
+
+    // How far along the ray we must travel for such movement to equal the cell size (1)
+    vec3 stepDistance = vec3(
         rayDirection.x != 0 ? 1. / rayDirection.x : tFar,
         rayDirection.y != 0 ? 1. / rayDirection.y : tFar,
         rayDirection.z != 0 ? 1. / rayDirection.z : tFar
     );
 
+    // TODO: implement correct distance calculation
+    distance = tNear;
     normalAxis = outerSideNormalAxis;
     while (isInWorldBounds(currentVoxel)) {
         // Sample world and return if data.z == 0
@@ -123,20 +129,20 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
             }
         }
 
-        vec3 tMaxAbs = abs(tMax);
-        if (tMaxAbs.x < tMaxAbs.y && tMaxAbs.x < tMaxAbs.z) {
+        vec3 gridCrossDistanceAbs = abs(gridCrossDistance);
+        if (gridCrossDistanceAbs.x < gridCrossDistanceAbs.y && gridCrossDistanceAbs.x < gridCrossDistanceAbs.z) {
             // X-axis traversal
-            tMax.x += tDelta.x;
+            gridCrossDistance.x += stepDistance.x;
             currentVoxel.x += step.x;
             normalAxis = 0;
-        } else if (tMaxAbs.y < tMaxAbs.z) {
+        } else if (gridCrossDistanceAbs.y < gridCrossDistanceAbs.z) {
             // Y-axis traversal
-            tMax.y += tDelta.y;
+            gridCrossDistance.y += stepDistance.y;
             currentVoxel.y += step.y;
             normalAxis = 1;
         } else {
             // Z-axis traversal
-            tMax.z += tDelta.z;
+            gridCrossDistance.z += stepDistance.z;
             currentVoxel.z += step.z;
             normalAxis = 2;
         }
@@ -166,12 +172,11 @@ bool intersectWorld(vec3 rayOrigin, vec3 rayDirection, out vec4 voxelData, out f
     }
 
     int normalAxis;
-    if (!traverseWorld(rayOrigin, rayDirection, tNear, tFar, voxelData, outerSideNormalAxis, normalAxis)) {
+    if (!traverseWorld(rayOrigin, rayDirection, tNear, tFar, voxelData, outerSideNormalAxis, normalAxis, distance)) {
         return false;
     }
 
     normal = getNormalFromAxisAndRayDirection(normalAxis, rayDirection);
-    distance = tNear;
     return true;
 }
 
@@ -191,11 +196,25 @@ vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
     float distance;
     vec3 normal;
     bool hasIntersection = intersectWorld(rayOrigin, rayDirection, voxelData, distance, normal);
-    if (!hasIntersection)
+    if (!hasIntersection) {
         return getBackground(rayDirection);
+    }
 
-    vec3 hitPoint = rayOrigin + distance * rayDirection;
-    return voxelData * calculateDiffuseLight(lightPos, hitPoint, normal);
+    return vec4(vec3(1. / distance),1.);
+
+    /*
+    vec3 hitPoint = rayOrigin + (distance - 0.01) * rayDirection;
+
+    vec4 voxelData2;
+    float distance2;
+    vec3 normal2;
+    bool hasIntersection2 = intersectWorld(hitPoint, normalize(lightPos - hitPoint), voxelData2, distance2, normal2);
+    if (!hasIntersection2) {
+        return vec4(0);
+    }
+
+    return voxelData;
+    */
 }
 
 
