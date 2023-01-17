@@ -13,9 +13,9 @@ Open the project in the IDE of your choice that supports Maven projects. (I reco
 
 ## Repository structure
 
-All code is located in src/main/.
-The Java source code is located in src/main/java.
-The shader source code is located in src/resources/shaders/.
+All code is located in src/main/. <br>
+The Java source code is located in src/main/java. <br>
+The shader source code is located in src/resources/shaders/. <br>
 
 ## Example
 ![grid-32x32](screenshots/grid-32x32.png)
