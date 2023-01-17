@@ -22,7 +22,10 @@ public class Camera {
     }
 
     public void moveLeftRight(float speed) {
-        Vector3 front = TrigonometryHelper.degreeEulerAnglesToVector(this.yaw, this.pitch);
+        // Pitch fix: add 0.5 degrees to the pitch value to avoid flipped movement that occurs at pitch = -90
+        // for some reason.
+        // This is a dirty fix but it works.
+        Vector3 front = TrigonometryHelper.degreeEulerAnglesToVector(this.yaw, this.pitch + 0.5f);
         Vector3 right = front.cross(Vector3.UP).normalized();
         this.position = this.position.add(right.scale(speed));
     }
