@@ -16,5 +16,10 @@ Open the project in the IDE of your choice that supports Maven projects. (I reco
 The Java source code is located in src/main/java. <br>
 The shader source code is located in src/resources/shaders/. <br>
 
-## Example
-![grid-32x32](screenshots/grid-32x32x32.png)
+## Examples
+
+### No Shading
+![](screenshots/grid-32x32x32.png)
+
+### Shading
+![](screenshots/grid-32x32x32-shaded.png)
