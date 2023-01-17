@@ -29,30 +29,39 @@ public class ScreenshotUtil {
         return ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
     }
 
-    public static void takeScreenshot(int width, int height, String saveFilename) throws IOException {
-        // Allocate space for RBG pixels
+    public static final int RGB_MASK = 0xff;
+    public static final int FULL_ALPHA = 0xff000000;
+
+    public static int rgbToArgb(byte r, byte g, byte b) {
+        return
+              FULL_ALPHA              // A
+            | ((r & RGB_MASK) << 16)  // R
+            | ((g & RGB_MASK) << 8)   // G
+            | (b & RGB_MASK);         // B
+    }
+
+    public static void saveImage(int width, int height, int[] pixelData, String filename) throws IOException {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        image.setRGB(0, 0, width, height, pixelData, 0, width);
+        ImageIO.write(image, "png", new File(filename));
+    }
+
+    public static void takeScreenshot(int width, int height, String filename) throws IOException {
         ByteBuffer frameByteBuffer = ScreenshotUtil.allocBytes(width * height * 3);
         int[] pixels = new int[width * height];
 
-        // Grab a copy of the current frame contents as RGB (has to be UNSIGNED_BYTE or colors come out too dark)
         GL11.glReadPixels(0, 0, width, height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, frameByteBuffer);
 
-        // Copy RGB data from ByteBuffer to integer array
         for (int i = 0; i < pixels.length; i++) {
             int index = i * 3;
-            pixels[i] =
-                0xFF000000                                                  // A
-                    | ((frameByteBuffer.get(index) & 0x000000FF) << 16)     // R
-                    | ((frameByteBuffer.get(index + 1) & 0x000000FF) << 8)  // G
-                    | ((frameByteBuffer.get(index + 2) & 0x000000FF));      // B
+            byte r = frameByteBuffer.get(index);
+            byte g = frameByteBuffer.get(index + 1);
+            byte b = frameByteBuffer.get(index + 2);
+            pixels[i] = ScreenshotUtil.rgbToArgb(r, g, b);
         }
 
-        // Flip the pixels vertically (opengl has 0,0 at lower left, java is upper left)
+        // Flip the pixels vertically (OpenGL has 0,0 at lower left, Java is upper left)
         pixels = ScreenshotUtil.flipPixels(pixels, width, height);
-
-        // Create a BufferedImage with the RGB pixels then save as PNG
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        image.setRGB(0, 0, width, height, pixels, 0, width);
-        ImageIO.write(image, "png", new File(saveFilename));
+        ScreenshotUtil.saveImage(width, height, pixels, filename);
     }
 }
