@@ -14,10 +14,11 @@ public class ScreenshotUtil {
     public static int[] flipPixels(int[] pixels, int width, int height) {
         int[] flippedPixels = new int[width * height];
 
-        for (int y = height - 1; y >= 0; --y) {
+        for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 int index = y * width + x;
-                flippedPixels[index] = pixels[index];
+                int reverseIndex = (height - y - 1) * width + x;
+                flippedPixels[reverseIndex] = pixels[index];
             }
         }
 
