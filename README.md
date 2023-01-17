@@ -1,7 +1,7 @@
 # java-voxel-raytracer
 
-A voxel raytracer written in Java, utilizing the "A Fast Voxel Traversal Algorithm for Ray Tracing" paper
-by John Amanatides and Andrew Woo. 
+A voxel raytracer written in Java, utilizing the algorithm presented in the paper 
+"A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo. 
 
 [The Paper](http://www.cse.yorku.ca/~amana/research/grid.pdf)
 
@@ -13,7 +13,6 @@ Open the project in the IDE of your choice that supports Maven projects. (I reco
 
 ## Repository structure
 
-All code is located in src/main/. <br>
 The Java source code is located in src/main/java. <br>
 The shader source code is located in src/resources/shaders/. <br>
 
