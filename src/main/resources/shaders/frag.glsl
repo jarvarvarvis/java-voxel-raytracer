@@ -30,7 +30,7 @@ vec3 getNormalOfClosestHitCoordinatePlane(vec3 rayDirection) {
 
 vec4 getSkyboxBackground(vec3 rayDirection) {
     vec3 normal = getNormalOfClosestHitCoordinatePlane(rayDirection);
-    float value = dot(rayDirection, normal) * 0.25;
+    float value = dot(rayDirection, normal) * 0.5;
     vec3 color = vec3(0.6, 0.6, 1.0);
     return vec4(value * color, 1.);
 }
@@ -190,11 +190,11 @@ vec4 calculateDiffuseLight(vec3 lightPos, vec3 hitPoint, vec3 normal) {
     vec3 lightVector = lightPos - hitPoint;
     float lightInclination = dot(normal, normalize(lightVector));
 
-    return lightInclination > 0 ? vec4(lightInclination, lightInclination, lightInclination, 1) : vec4(.05, .05, .05, 1.);
+    return lightInclination > 0.0 ? vec4(lightInclination, lightInclination, lightInclination, 1) : vec4(.05, .05, .05, 1.);
 }
 
 vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
-    vec3 lightPos = vec3(-100, 200, -100);
+    vec3 lightPos = vec3(-100, 200, 100);
 
     vec4 voxelData;
     float distance;
@@ -204,21 +204,17 @@ vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
         return getBackground(rayDirection);
     }
 
-    return voxelData * 1./(distance/2);
-
-    /*
-    vec3 hitPoint = rayOrigin + (distance - 0.01) * rayDirection;
+    vec3 hitPoint = rayOrigin + rayDirection * (distance - 0.001);
 
     vec4 voxelData2;
     float distance2;
     vec3 normal2;
     bool hasIntersection2 = intersectWorld(hitPoint, normalize(lightPos - hitPoint), voxelData2, distance2, normal2);
-    if (!hasIntersection2) {
-        return vec4(0);
+    if (hasIntersection2) {
+        return voxelData * vec4(.05, .05, .05, 1.);
     }
-
-    return voxelData;
-    */
+    vec4 diffuse = voxelData * calculateDiffuseLight(lightPos, hitPoint, normal);
+    return diffuse;
 }
 
 
