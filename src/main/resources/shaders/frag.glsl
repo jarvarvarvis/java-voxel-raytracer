@@ -41,21 +41,21 @@ vec4 getBackground(vec3 rayDirection) {
 
 
 
-bool isInWorldBounds(ivec3 coord) {
-    return coord.x >= 0 && coord.x < worldSize.x &&
-           coord.y >= 0 && coord.y < worldSize.y &&
-           coord.z >= 0 && coord.z < worldSize.z;
+bool isInWorldBounds(vec3 coord) {
+    return coord.x >= 0. && coord.x < worldSize.x &&
+           coord.y >= 0. && coord.y < worldSize.y &&
+           coord.z >= 0. && coord.z < worldSize.z;
 }
 
-vec3 mapToTexCoord(ivec3 worldCoord) {
+vec3 mapToTexCoord(vec3 worldCoord) {
     // Derived from rescale:
     // worldCoord                     = coord * worldSize - 0.5
     // worldCoord + 0.5               = coord * worldSize
     // (worldCoord + 0.5) / worldSize = coord
-    return (vec3(worldCoord) + 0.5f) / worldSize;
+    return (worldCoord + 0.5f) / worldSize;
 }
 
-bool sampleWorld(ivec3 worldCoord, out vec4 worldData) {
+bool sampleWorld(vec3 worldCoord, out vec4 worldData) {
     if (!isInWorldBounds(worldCoord))
         return false;
 
@@ -90,63 +90,64 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
     // If we are inside the bounding box of the world, start at the ray origin
     tNear = max(0, tNear) + 0.001;
     vec3 rayStart = rayOrigin + tNear * rayDirection;
-    vec3 rayEnd = rayOrigin + tFar * rayDirection;
+    vec3 currentVoxel = floor(rayStart);
 
-    ivec3 currentVoxel = ivec3(floor(rayStart));
-    ivec3 lastVoxel = ivec3(floor(rayEnd));
-    ivec3 step = ivec3(sign(rayDirection));
-
-    vec3 distanceToNext = vec3(
-        step.x >= 0 ? (currentVoxel.x + 1.) - rayStart.x : rayStart.x - currentVoxel.x,
-        step.y >= 0 ? (currentVoxel.y + 1.) - rayStart.y : rayStart.y - currentVoxel.y,
-        step.z >= 0 ? (currentVoxel.z + 1.) - rayStart.z : rayStart.z - currentVoxel.z
+    vec3 step = vec3(
+        rayDirection.x >= 0.0 ? 1.0 : -1.0,
+        rayDirection.y >= 0.0 ? 1.0 : -1.0,
+        rayDirection.z >= 0.0 ? 1.0 : -1.0
     );
 
-    // How far along the ray we must travel to cross the x, y or z grid line
-    vec3 nearestVoxelBoundary = vec3(
-        rayDirection.x != 0 ? distanceToNext.x / rayDirection.x : tFar,
-        rayDirection.y != 0 ? distanceToNext.y / rayDirection.y : tFar,
-        rayDirection.z != 0 ? distanceToNext.z / rayDirection.z : tFar
+    vec3 distanceToNext = vec3(
+        step.x > 0 ? (currentVoxel.x + 1.) - rayStart.x : rayStart.x - currentVoxel.x,
+        step.y > 0 ? (currentVoxel.y + 1.) - rayStart.y : rayStart.y - currentVoxel.y,
+        step.z > 0 ? (currentVoxel.z + 1.) - rayStart.z : rayStart.z - currentVoxel.z
     );
 
     // How far along the ray we must travel for such movement to equal the cell size (1)
-    vec3 stepDistance = vec3(
-        rayDirection.x != 0 ? 1. / rayDirection.x : tFar,
-        rayDirection.y != 0 ? 1. / rayDirection.y : tFar,
-        rayDirection.z != 0 ? 1. / rayDirection.z : tFar
+    vec3 stepDelta = abs(vec3(
+        rayDirection.x != 0.0 ? 1. / rayDirection.x : tFar,
+        rayDirection.y != 0.0 ? 1. / rayDirection.y : tFar,
+        rayDirection.z != 0.0 ? 1. / rayDirection.z : tFar
+    ));
+
+    // How far along the ray we must travel to cross the x, y or z grid line
+    vec3 nearestVoxelBoundary = vec3(
+        rayDirection.x != 0.0 ? stepDelta.x * distanceToNext.x : tFar,
+        rayDirection.y != 0.0 ? stepDelta.y * distanceToNext.y : tFar,
+        rayDirection.z != 0.0 ? stepDelta.z * distanceToNext.z : tFar
     );
 
-    // TODO: implement smooth distance calculation between voxels
-    distance = tNear;
+    distance = 0.0;
+
     normalAxis = outerSideNormalAxis;
     while (isInWorldBounds(currentVoxel)) {
         // Sample world and return if data.z == 0
         vec4 voxelData;
         if (sampleWorld(currentVoxel, voxelData)) {
             if (voxelData.z != 0) {
-                color = vec4(vec3(1./distance), 1.);
+                distance = tNear + distance;
+                color = voxelData;
                 return true;
             }
         }
 
-        vec3 nearestVoxelBoundaryAbs = abs(nearestVoxelBoundary);
-        if (nearestVoxelBoundaryAbs.x < nearestVoxelBoundaryAbs.y && nearestVoxelBoundaryAbs.x < nearestVoxelBoundaryAbs.z) {
+        distance = min(nearestVoxelBoundary.x, min(nearestVoxelBoundary.y, nearestVoxelBoundary.z));
+
+        if (nearestVoxelBoundary.x < nearestVoxelBoundary.y && nearestVoxelBoundary.x < nearestVoxelBoundary.z) {
             // X-axis traversal
-            distance += nearestVoxelBoundaryAbs.x;
-            nearestVoxelBoundary.x += stepDistance.x;
             currentVoxel.x += step.x;
+            nearestVoxelBoundary.x += stepDelta.x;
             normalAxis = 0;
-        } else if (nearestVoxelBoundaryAbs.y < nearestVoxelBoundaryAbs.z) {
+        } else if (nearestVoxelBoundary.y < nearestVoxelBoundary.z) {
             // Y-axis traversal
-            distance += nearestVoxelBoundaryAbs.y;
-            nearestVoxelBoundary.y += stepDistance.y;
             currentVoxel.y += step.y;
+            nearestVoxelBoundary.y += stepDelta.y;
             normalAxis = 1;
         } else {
             // Z-axis traversal
-            distance += nearestVoxelBoundaryAbs.z;
-            nearestVoxelBoundary.z += stepDistance.z;
             currentVoxel.z += step.z;
+            nearestVoxelBoundary.z += stepDelta.z;
             normalAxis = 2;
         }
     }
@@ -203,7 +204,7 @@ vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
         return getBackground(rayDirection);
     }
 
-    return voxelData;
+    return voxelData * 1./(distance/2);
 
     /*
     vec3 hitPoint = rayOrigin + (distance - 0.01) * rayDirection;
