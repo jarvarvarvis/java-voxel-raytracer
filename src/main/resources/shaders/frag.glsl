@@ -96,17 +96,17 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
     ivec3 lastVoxel = ivec3(floor(rayEnd));
     ivec3 step = ivec3(sign(rayDirection));
 
-    vec3 nearestSquareSide = vec3(
-        step.x >= 0 ? (currentVoxel.x + 1.) - rayOrigin.x : rayOrigin.x - currentVoxel.x,
-        step.y >= 0 ? (currentVoxel.y + 1.) - rayOrigin.y : rayOrigin.y - currentVoxel.y,
-        step.z >= 0 ? (currentVoxel.z + 1.) - rayOrigin.z : rayOrigin.z - currentVoxel.z
+    vec3 distanceToNext = vec3(
+        step.x >= 0 ? (currentVoxel.x + 1.) - rayStart.x : rayStart.x - currentVoxel.x,
+        step.y >= 0 ? (currentVoxel.y + 1.) - rayStart.y : rayStart.y - currentVoxel.y,
+        step.z >= 0 ? (currentVoxel.z + 1.) - rayStart.z : rayStart.z - currentVoxel.z
     );
 
-    // How far along the ray we must travel to cross the x,y or z grid line
-    vec3 gridCrossDistance = vec3(
-        rayDirection.x != 0 ? nearestSquareSide.x / rayDirection.x : tFar,
-        rayDirection.y != 0 ? nearestSquareSide.y / rayDirection.y : tFar,
-        rayDirection.z != 0 ? nearestSquareSide.z / rayDirection.z : tFar
+    // How far along the ray we must travel to cross the x, y or z grid line
+    vec3 nearestVoxelBoundary = vec3(
+        rayDirection.x != 0 ? distanceToNext.x / rayDirection.x : tFar,
+        rayDirection.y != 0 ? distanceToNext.y / rayDirection.y : tFar,
+        rayDirection.z != 0 ? distanceToNext.z / rayDirection.z : tFar
     );
 
     // How far along the ray we must travel for such movement to equal the cell size (1)
@@ -116,7 +116,7 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
         rayDirection.z != 0 ? 1. / rayDirection.z : tFar
     );
 
-    // TODO: implement correct distance calculation
+    // TODO: implement smooth distance calculation between voxels
     distance = tNear;
     normalAxis = outerSideNormalAxis;
     while (isInWorldBounds(currentVoxel)) {
@@ -124,25 +124,28 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
         vec4 voxelData;
         if (sampleWorld(currentVoxel, voxelData)) {
             if (voxelData.z != 0) {
-                color = voxelData;
+                color = vec4(vec3(1./distance), 1.);
                 return true;
             }
         }
 
-        vec3 gridCrossDistanceAbs = abs(gridCrossDistance);
-        if (gridCrossDistanceAbs.x < gridCrossDistanceAbs.y && gridCrossDistanceAbs.x < gridCrossDistanceAbs.z) {
+        vec3 nearestVoxelBoundaryAbs = abs(nearestVoxelBoundary);
+        if (nearestVoxelBoundaryAbs.x < nearestVoxelBoundaryAbs.y && nearestVoxelBoundaryAbs.x < nearestVoxelBoundaryAbs.z) {
             // X-axis traversal
-            gridCrossDistance.x += stepDistance.x;
+            distance += nearestVoxelBoundaryAbs.x;
+            nearestVoxelBoundary.x += stepDistance.x;
             currentVoxel.x += step.x;
             normalAxis = 0;
-        } else if (gridCrossDistanceAbs.y < gridCrossDistanceAbs.z) {
+        } else if (nearestVoxelBoundaryAbs.y < nearestVoxelBoundaryAbs.z) {
             // Y-axis traversal
-            gridCrossDistance.y += stepDistance.y;
+            distance += nearestVoxelBoundaryAbs.y;
+            nearestVoxelBoundary.y += stepDistance.y;
             currentVoxel.y += step.y;
             normalAxis = 1;
         } else {
             // Z-axis traversal
-            gridCrossDistance.z += stepDistance.z;
+            distance += nearestVoxelBoundaryAbs.z;
+            nearestVoxelBoundary.z += stepDistance.z;
             currentVoxel.z += step.z;
             normalAxis = 2;
         }
@@ -200,7 +203,7 @@ vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
         return getBackground(rayDirection);
     }
 
-    return vec4(vec3(1. / distance),1.);
+    return voxelData;
 
     /*
     vec3 hitPoint = rayOrigin + (distance - 0.01) * rayDirection;
