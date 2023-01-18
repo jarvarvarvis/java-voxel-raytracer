@@ -21,5 +21,10 @@ The shader source code is located in src/resources/shaders/. <br>
 ### No Shading
 ![](screenshots/grid-32x32x32.png)
 
-### Shading
+### Basic Shading
 ![](screenshots/grid-32x32x32-shaded.png)
+
+### Basic Shading + Shadows
+![](screenshots/grid-32x32x32-shadows.png)
+
+The light source is at point (-100, 200, 100).
