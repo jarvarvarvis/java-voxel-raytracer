@@ -14,17 +14,27 @@ Open the project in the IDE of your choice that supports Maven projects. (I reco
 ## Repository structure
 
 The Java source code is located in src/main/java. <br>
-The shader source code is located in src/resources/shaders/. <br>
+The shader source code is located in src/main/resources/shaders/. <br>
+
+[The heart of the raytracer, frag.glsl](src/main/resources/shaders/frag.glsl)
+
+ou can set some parameters there yourself, mainly the light source position (only one is
+present at the moment) and some reflection parameters.
 
 ## Examples
 
-### No Shading
+### No Shading (32x32x32)
 ![](screenshots/grid-32x32x32.png)
 
-### Basic Shading
+### Basic Shading (32x32x32)
 ![](screenshots/grid-32x32x32-shaded.png)
 
-### Basic Shading + Shadows
+### Basic Shading + Shadows (32x32x32)
 ![](screenshots/grid-32x32x32-shadows.png)
+
+The light source is at point (-100, 200, 100).
+
+### Basic Shading + Shadows + Reflections (16x16x16) - Close-Up
+![](screenshots/grid-16x16x16-reflections-closeup.png)
 
 The light source is at point (-100, 200, 100).
