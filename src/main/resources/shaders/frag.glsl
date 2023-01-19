@@ -14,18 +14,27 @@ uniform vec3 cameraRotation;
 //////////////////// Parameters ////////////////////
 
 // Fresnel calculations
-const float REFRACTIVE_INDEX_AIR = 1.00029;
+const float REFRACTIVE_INDEX_AIR =  1.00029;
 const float REFRACTIVE_INDEX_OBJECT = 1.125;
 const float OBJECT_REFLECTIVITY = 0.05;
 
 // Use reflections
-const bool DO_REFLECTIONS = true;
+#define DO_REFLECTIONS
+//#undef DO_REFLECTIONS
 
-// Light
+// Do Jittered Anti-Aliasing (random)
+// NOTE: Noticeable performance impact
+#define DO_ANTIALIASING
+//#undef DO_ANTIALIASING
+
+const int ANTIALIASING_SAMPLES = 2;
+
+// Position of the light source
 const vec3 LIGHT_POSITION = vec3(-100, 200, 100);
 
-// Convert to output color (RGB) to sRGB
-const bool CONVERT_TO_SRGB = true;
+// Convert output color (RGB) to sRGB
+#define CONVERT_TO_SRGB
+//#undef CONVERT_TO_SRGB
 
 ///////////////////////////////////////////////////
 
@@ -263,15 +272,15 @@ vec4 calculateColor(vec4 voxelData, vec3 rayDirection, vec3 hitPoint, vec3 hitNo
     // Calculate shading
     vec4 shadingMultiplier = calculateShadingMultiplier(hitPoint, hitNormal);
 
-    if (DO_REFLECTIONS) {
+    #ifdef DO_REFLECTIONS
         // Calculate reflections
         vec4 reflectionSample = calculateReflectionColor(rayDirection, hitPoint, hitNormal);
         float reflectAmount = calculateFresnelReflectAmount(rayDirection, hitNormal, REFRACTIVE_INDEX_AIR, REFRACTIVE_INDEX_OBJECT);
 
         return mix(shadingMultiplier * voxelData, reflectionSample, reflectAmount);
-    }
-
-    return shadingMultiplier * voxelData;
+    #else
+        return shadingMultiplier * voxelData;
+    #endif
 }
 
 vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
@@ -321,18 +330,55 @@ vec3 linearToSRGB(vec3 rgb) {
     );
 }
 
-void main() {
-    vec2 uv = vertexTexCoord;
+vec4 performRaytrace(vec2 rayStartOnScreen) {
+    float pitch = cameraRotation.x;
+    float yaw = cameraRotation.y;
+    vec3 direction = pitchYawMatrix(pitch, yaw) * normalize(vec3(rayStartOnScreen, 1.));
+
+    vec4 color = castRay(cameraOrigin, direction);
+    #ifdef CONVERT_TO_SRGB
+        color = vec4(linearToSRGB(color.xyz), color.w);
+    #endif
+    return color;
+}
+
+vec2 getUV(vec2 texCoord) {
+    vec2 uv = texCoord;
     uv = uv * 2.0 - 1.0; // Transform from [0,1] to [-1,1];
     uv.x *= float(iResolution.x) / iResolution.y; // Aspect fix
     uv *= 0.45; // FOV
+    return uv;
+}
 
-    float pitch = cameraRotation.x;
-    float yaw = cameraRotation.y;
-    vec3 direction = pitchYawMatrix(pitch, yaw) * normalize(vec3(uv, 1));
 
-    fragColor = castRay(cameraOrigin, direction);
-    if (CONVERT_TO_SRGB) {
-        fragColor = vec4(linearToSRGB(fragColor.xyz), fragColor.w);
+
+void doNormalRaytrace() {
+    vec2 uv = getUV(vertexTexCoord);
+    fragColor = performRaytrace(uv);
+}
+
+float frand(vec2 seed){
+    return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec2 v2rand(vec2 seed) {
+    return vec2(frand(seed.xy), frand(-seed.yx * 234.4589));
+}
+
+void doRaytraceWithAntialiasing() {
+    vec4 totalColor = vec4(0);
+    vec2 uv = getUV(vertexTexCoord);
+    for (int i = 0; i < ANTIALIASING_SAMPLES; ++i) {
+        vec2 jitteredUV = uv + v2rand(vertexTexCoord * (i + 1)) * 0.0007;
+        totalColor += performRaytrace(jitteredUV);
     }
+    fragColor = totalColor / ANTIALIASING_SAMPLES;
+}
+
+void main() {
+    #ifdef DO_ANTIALIASING
+        doRaytraceWithAntialiasing();
+    #else
+        doNormalRaytrace();
+    #endif
 }

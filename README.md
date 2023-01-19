@@ -41,3 +41,6 @@ The light source is at point (-100, 200, 100).
 
 ### sRGB mapping
 ![](screenshots/grid-16x16x16-sRGB.png)
+
+### Jitter Anti-Aliasing (2 samples)
+![](screenshots/grid-16x16x16-jitter-anti-aliasing.png)
