@@ -96,10 +96,20 @@ bool intersectsWorld(vec3 rayOrigin, vec3 rayDirectionInv, out float tNear, out 
     return tFar >= 0 && tFar >= tNear;
 }
 
+vec3 calculateNormal(int normalAxis, vec3 step) {
+    if (normalAxis == 0) {
+        return vec3(-step.x, 0., 0.);
+    }
+    if (normalAxis == 1) {
+        return vec3(0., -step.y, 0.);
+    }
+    return vec3(0., 0., -step.z);
+}
+
 // Implementation based on "A Fast Voxel Traversal Algorithm for Ray Tracing"
 // by John Amanatides and Andrew Woo.
 // Paper: http://www.cse.yorku.ca/~amana/research/grid.pdf
-bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, out vec4 color, int outerSideNormalAxis, out int normalAxis, out float distance) {
+bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, out vec4 color, int outerSideNormalAxis, out vec3 normal, out float distance) {
     // Increase tNear by small amount to start *inside* the world
     // If we are inside the bounding box of the world, start at the ray origin
     tNear = max(0, tNear) + 0.001;
@@ -134,7 +144,7 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
 
     distance = 0.0;
 
-    normalAxis = outerSideNormalAxis;
+    int normalAxis = outerSideNormalAxis;
     while (isInWorldBounds(currentVoxel)) {
         // Sample world and return if data.z == 0
         vec4 voxelData;
@@ -142,23 +152,28 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
             if (voxelData.z != 0) {
                 distance = tNear + distance;
                 color = voxelData;
+                normal = calculateNormal(normalAxis, step);
                 return true;
             }
         }
 
-        distance = min(nearestVoxelBoundary.x, min(nearestVoxelBoundary.y, nearestVoxelBoundary.z));
-
         if (nearestVoxelBoundary.x < nearestVoxelBoundary.y && nearestVoxelBoundary.x < nearestVoxelBoundary.z) {
+            distance = nearestVoxelBoundary.x;
+
             // X-axis traversal
             currentVoxel.x += step.x;
             nearestVoxelBoundary.x += stepDelta.x;
             normalAxis = 0;
         } else if (nearestVoxelBoundary.y < nearestVoxelBoundary.z) {
+            distance = nearestVoxelBoundary.y;
+
             // Y-axis traversal
             currentVoxel.y += step.y;
             nearestVoxelBoundary.y += stepDelta.y;
             normalAxis = 1;
         } else {
+            distance = nearestVoxelBoundary.z;
+
             // Z-axis traversal
             currentVoxel.z += step.z;
             nearestVoxelBoundary.z += stepDelta.z;
@@ -169,19 +184,6 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
     return false;
 }
 
-vec3 getNormalFromAxisAndRayDirection(int normalAxis, vec3 rayDirection) {
-    if (normalAxis == 0) { // X
-        return vec3(-sign(rayDirection.x), 0., 0.);
-    }
-    if (normalAxis == 1) { // Y
-        return vec3(0., -sign(rayDirection.y), 0.);
-    }
-    if (normalAxis == 2) { // Z
-        return vec3(0., 0., -sign(rayDirection.z));
-    }
-    return vec3(0);
-}
-
 bool intersectWorld(vec3 rayOrigin, vec3 rayDirection, out vec4 voxelData, out float distance, out vec3 normal) {
     float tNear, tFar;
     int outerSideNormalAxis;
@@ -189,12 +191,10 @@ bool intersectWorld(vec3 rayOrigin, vec3 rayDirection, out vec4 voxelData, out f
         return false;
     }
 
-    int normalAxis;
-    if (!traverseWorld(rayOrigin, rayDirection, tNear, tFar, voxelData, outerSideNormalAxis, normalAxis, distance)) {
+    if (!traverseWorld(rayOrigin, rayDirection, tNear, tFar, voxelData, outerSideNormalAxis, normal, distance)) {
         return false;
     }
 
-    normal = getNormalFromAxisAndRayDirection(normalAxis, rayDirection);
     return true;
 }
 
