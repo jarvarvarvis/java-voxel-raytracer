@@ -38,3 +38,6 @@ The light source is at point (-100, 200, 100).
 ![](screenshots/grid-16x16x16-reflections-closeup.png)
 
 The light source is at point (-100, 200, 100).
+
+### sRGB mapping
+![](screenshots/grid-16x16x16-sRGB.png)

@@ -24,18 +24,15 @@ const bool DO_REFLECTIONS = true;
 // Light
 const vec3 LIGHT_POSITION = vec3(-100, 200, 100);
 
+// Convert to output color (RGB) to sRGB
+const bool CONVERT_TO_SRGB = true;
+
 ///////////////////////////////////////////////////
 
 
 vec3 getNormalOfClosestHitCoordinatePlane(vec3 rayDirection) {
     vec3 directionAbs = abs(rayDirection);
 
-    // Elegant conversion to branchless code
-    /*vec3 normal = vec3(
-        maxComp == directionAbs.x ? directionSign.x : 0,
-        maxComp == directionAbs.y ? directionSign.y : 0,
-        maxComp == directionAbs.z ? directionSign.z : 0
-    );*/
     float maxComp = max(directionAbs.x, max(directionAbs.y, directionAbs.z));
     vec3 directionSign = sign(rayDirection);
     vec3 normal = directionSign * (1.0 - sign(maxComp - directionAbs));
@@ -44,8 +41,8 @@ vec3 getNormalOfClosestHitCoordinatePlane(vec3 rayDirection) {
 
 vec4 getSkyboxBackground(vec3 rayDirection) {
     vec3 normal = getNormalOfClosestHitCoordinatePlane(rayDirection);
-    float value = dot(rayDirection, normal) * 0.5;
-    vec3 color = vec3(0.6, 0.6, 1.0);
+    float value = dot(rayDirection, normal) * 0.25;
+    vec3 color = vec3(0.2, 0.2, 0.3);
     return vec4(value * color, 1.);
 }
 
@@ -306,6 +303,24 @@ mat3 pitchYawMatrix(float pitch, float yaw) {
     return yawMatrix * pitchMatrix;
 }
 
+vec3 lessThan(vec3 f, float value) {
+    return vec3(
+        f.x < value ? 1.0f : 0.0f,
+        f.y < value ? 1.0f : 0.0f,
+        f.z < value ? 1.0f : 0.0f
+    );
+}
+
+vec3 linearToSRGB(vec3 rgb) {
+    rgb = clamp(rgb, 0.0f, 1.0f);
+
+    return mix(
+        pow(rgb, vec3(1.0f / 2.4f)) * 1.055f - 0.055f,
+        rgb * 12.92f,
+        lessThan(rgb, 0.0031308f)
+    );
+}
+
 void main() {
     vec2 uv = vertexTexCoord;
     uv = uv * 2.0 - 1.0; // Transform from [0,1] to [-1,1];
@@ -317,4 +332,7 @@ void main() {
     vec3 direction = pitchYawMatrix(pitch, yaw) * normalize(vec3(uv, 1));
 
     fragColor = castRay(cameraOrigin, direction);
+    if (CONVERT_TO_SRGB) {
+        fragColor = vec4(linearToSRGB(fragColor.xyz), fragColor.w);
+    }
 }
