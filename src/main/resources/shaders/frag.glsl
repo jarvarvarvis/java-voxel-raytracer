@@ -11,6 +11,20 @@ uniform ivec3 worldSize;
 uniform vec3 cameraOrigin;
 uniform vec3 cameraRotation;
 
+//////////////////// Parameters ////////////////////
+
+// Fresnel calculations
+const float REFRACTIVE_INDEX_AIR = 1.00029;
+const float REFRACTIVE_INDEX_OBJECT = 1.125;
+const float OBJECT_REFLECTIVITY = 0.05;
+
+// Use reflections
+const bool DO_REFLECTIONS = true;
+
+// Light
+const vec3 LIGHT_POSITION = vec3(-100, 200, 100);
+
+///////////////////////////////////////////////////
 
 
 vec3 getNormalOfClosestHitCoordinatePlane(vec3 rayDirection) {
@@ -186,16 +200,84 @@ bool intersectWorld(vec3 rayOrigin, vec3 rayDirection, out vec4 voxelData, out f
 
 
 
-vec4 calculateDiffuseLight(vec3 lightPos, vec3 hitPoint, vec3 normal) {
+vec4 calculateDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 normal) {
     vec3 lightVector = lightPos - hitPoint;
     float lightInclination = dot(normal, normalize(lightVector));
 
     return lightInclination > 0.0 ? vec4(lightInclination, lightInclination, lightInclination, 1) : vec4(.05, .05, .05, 1.);
 }
 
-vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
-    vec3 lightPos = vec3(-100, 200, 100);
+vec4 calculateShadowOrDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 normal) {
+    vec4 voxelData2;
+    float distance2;
+    vec3 normal2;
+    bool hasIntersection2 = intersectWorld(hitPoint, normalize(lightPos - hitPoint), voxelData2, distance2, normal2);
+    if (hasIntersection2) {
+        return vec4(.05, .05, .05, 1.);
+    }
 
+    return calculateDiffuseMultiplier(lightPos, hitPoint, normal);
+}
+
+vec4 calculateShadingMultiplier(vec3 hitPoint, vec3 normal) {
+    return calculateShadowOrDiffuseMultiplier(LIGHT_POSITION, hitPoint, normal);
+}
+
+float calculateFresnelReflectAmount(vec3 incident, vec3 normal, float refractiveIndexEnter, float refractiveIndexLeave) {
+    // Schlick approximation
+    float r0 = (refractiveIndexEnter - refractiveIndexLeave) / (refractiveIndexEnter + refractiveIndexLeave);
+    r0 *= r0;
+    float cosX = -dot(normal, incident);
+
+    if (refractiveIndexEnter > refractiveIndexLeave) {
+        float n = refractiveIndexEnter / refractiveIndexLeave;
+        float sinT2 = n * n * (1.0 - cosX * cosX);
+
+        // Total internal reflection
+        if (sinT2 > 1.0)
+            return 1.0;
+        cosX = sqrt(1.0 - sinT2);
+    }
+
+    float invCosX = 1.0 - cosX;
+    float reflectAmount = r0 + (1.0 - r0) * invCosX * invCosX * invCosX * invCosX * invCosX;
+
+    // Adjust reflect multiplier for object reflectivity
+    reflectAmount = OBJECT_REFLECTIVITY + (1.0 - OBJECT_REFLECTIVITY) * reflectAmount;
+    return reflectAmount;
+}
+
+vec4 calculateReflectionColor(vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
+    vec3 reflectDirection = reflect(rayDirection, hitNormal);
+
+    vec4 reflectVoxelData;
+    float reflectDistance;
+    vec3 reflectNormal;
+    bool hasIntersection = intersectWorld(hitPoint, reflectDirection, reflectVoxelData, reflectDistance, reflectNormal);
+    if (!hasIntersection) {
+        return getBackground(reflectDirection);
+    }
+
+    vec3 reflectHitPoint = hitPoint + reflectDistance * reflectDirection;
+    return reflectVoxelData * calculateShadingMultiplier(reflectHitPoint, reflectNormal);
+}
+
+vec4 calculateColor(vec4 voxelData, vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
+    // Calculate shading
+    vec4 shadingMultiplier = calculateShadingMultiplier(hitPoint, hitNormal);
+
+    if (DO_REFLECTIONS) {
+        // Calculate reflections
+        vec4 reflectionSample = calculateReflectionColor(rayDirection, hitPoint, hitNormal);
+        float reflectAmount = calculateFresnelReflectAmount(rayDirection, hitNormal, REFRACTIVE_INDEX_AIR, REFRACTIVE_INDEX_OBJECT);
+
+        return mix(shadingMultiplier * voxelData, reflectionSample, reflectAmount);
+    }
+
+    return shadingMultiplier * voxelData;
+}
+
+vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
     vec4 voxelData;
     float distance;
     vec3 normal;
@@ -205,16 +287,7 @@ vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
     }
 
     vec3 hitPoint = rayOrigin + rayDirection * (distance - 0.001);
-
-    vec4 voxelData2;
-    float distance2;
-    vec3 normal2;
-    bool hasIntersection2 = intersectWorld(hitPoint, normalize(lightPos - hitPoint), voxelData2, distance2, normal2);
-    if (hasIntersection2) {
-        return voxelData * vec4(.05, .05, .05, 1.);
-    }
-    vec4 diffuse = voxelData * calculateDiffuseLight(lightPos, hitPoint, normal);
-    return diffuse;
+    return calculateColor(voxelData, rayDirection, hitPoint, normal);
 }
 
 
