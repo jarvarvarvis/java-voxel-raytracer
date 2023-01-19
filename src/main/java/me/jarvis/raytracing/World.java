@@ -10,7 +10,7 @@ public class World {
 
     public World(int width, int height, int depth) {
         this.worldTexture = Texture3D.createFrom(width, height, depth, (x, y, z) -> {
-            if (Math.random() > 0.7) {
+            if (Math.random() > 0.9) {
                 return new Vector4b(x * 8, y * 8, z * 8, 255);
             }
             return new Vector4b(0, 0, 0, 0);

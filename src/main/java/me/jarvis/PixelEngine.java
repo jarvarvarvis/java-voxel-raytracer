@@ -41,7 +41,7 @@ public class PixelEngine {
 
         GLFW.glfwSetInputMode(this.window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
 
-        World world = new World(32, 32, 32);
+        World world = new World(16, 16, 16);
         this.camera = new Camera(new Vector3(0, 0, -20), 8, 330, 0.2f);
         this.raytraceContext = new RaytraceContext(world, camera);
 
