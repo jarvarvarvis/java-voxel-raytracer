@@ -16,16 +16,25 @@ uniform vec3 cameraRotation;
 // Fresnel calculations
 const float REFRACTIVE_INDEX_AIR =  1.00029;
 const float REFRACTIVE_INDEX_OBJECT = 1.125;
-const float OBJECT_REFLECTIVITY = 0.05;
+const float OBJECT_REFLECTIVITY = 0.45;
 
 // Use reflections
 #define DO_REFLECTIONS
 //#undef DO_REFLECTIONS
 
+// Do glossy reflections
+// NOTE: Has a noticeable performance impact
+#define DO_GLOSS
+//#undef DO_GLOSS
+
+// Glossiness factor
+const float OBJECT_GLOSSINESS = 0.04f;
+const int GLOSS_SAMPLES = 2;
+
 // Do Jittered Anti-Aliasing (random)
-// NOTE: Noticeable performance impact
-#define DO_ANTIALIASING
-//#undef DO_ANTIALIASING
+// NOTE: Has a noticeable performance impact
+// #define DO_ANTIALIASING
+#undef DO_ANTIALIASING
 
 // Number of random samples for jittered anti-aliasing
 const int ANTIALIASING_SAMPLES = 2;
@@ -43,6 +52,22 @@ const float SHADOW_SHADE = 0.03;
 ///////////////////////////////////////////////////
 
 
+
+
+float frand(vec2 seed){
+    return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec2 v2rand(vec2 seed) {
+    return vec2(frand(seed.xy), frand(seed.yx + 1.));
+}
+
+vec3 v3rand(vec3 seed) {
+    return vec3(v2rand(seed.xy), frand(seed.yz + 1.));
+}
+
+
+
 vec3 getNormalOfClosestHitCoordinatePlane(vec3 rayDirection) {
     vec3 directionAbs = abs(rayDirection);
 
@@ -54,9 +79,10 @@ vec3 getNormalOfClosestHitCoordinatePlane(vec3 rayDirection) {
 
 vec4 getSkyboxBackground(vec3 rayDirection) {
     vec3 normal = getNormalOfClosestHitCoordinatePlane(rayDirection);
-    float value = dot(rayDirection, normal) * 0.25;
-    vec3 color = vec3(0.2, 0.2, 0.3);
-    return vec4(value * color, 1.);
+    float value = dot(rayDirection, normal);
+    vec3 colorCorner = vec3(0.0);
+    vec3 colorCenter = vec3(0.15, 0.15, 0.3);
+    return vec4(mix(colorCorner, colorCenter, pow(value, 4)), 1.);
 }
 
 vec4 getBackground(vec3 rayDirection) {
@@ -258,19 +284,33 @@ float calculateFresnelReflectAmount(vec3 incident, vec3 normal, float refractive
     return reflectAmount;
 }
 
-vec4 calculateReflectionColor(vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
-    vec3 reflectDirection = reflect(rayDirection, hitNormal);
-
-    vec4 reflectVoxelData;
-    float reflectDistance;
-    vec3 reflectNormal;
-    bool hasIntersection = intersectWorld(hitPoint, reflectDirection, reflectVoxelData, reflectDistance, reflectNormal);
+vec4 calculateReflectedRayColor(vec3 hitPoint, vec3 reflectedDirection) {
+    vec4 reflectedVoxelData;
+    float reflectedDistance;
+    vec3 reflectedNormal;
+    bool hasIntersection = intersectWorld(hitPoint, reflectedDirection, reflectedVoxelData, reflectedDistance, reflectedNormal);
     if (!hasIntersection) {
-        return getBackground(reflectDirection);
+        return getBackground(reflectedDirection);
     }
 
-    vec3 reflectHitPoint = hitPoint + reflectDistance * reflectDirection;
-    return reflectVoxelData * calculateShadingMultiplier(reflectHitPoint, reflectNormal);
+    vec3 reflectHitPoint = hitPoint + reflectedDistance * reflectedDirection;
+    return reflectedVoxelData * calculateShadingMultiplier(reflectHitPoint, reflectedNormal);
+}
+
+vec4 calculateReflectionColor(vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
+    #ifdef DO_GLOSS
+        // Sample reflections from the same starting point with randomly offset direction vectors
+        vec4 reflectionSampleSum = vec4(0.0);
+        for (int i = 0; i < GLOSS_SAMPLES; ++i) {
+            vec3 offset = v3rand(hitPoint);
+            vec3 reflectedDirection = reflect(rayDirection, hitNormal) + offset * OBJECT_GLOSSINESS;
+            reflectionSampleSum += calculateReflectedRayColor(hitPoint, reflectedDirection);
+        }
+        return reflectionSampleSum / GLOSS_SAMPLES;
+    #else
+        vec3 reflectedDirection = reflect(rayDirection, hitNormal);
+        return calculateReflectedRayColor(hitPoint, reflectedDirection);
+    #endif
 }
 
 vec4 calculateColor(vec4 voxelData, vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
@@ -278,11 +318,10 @@ vec4 calculateColor(vec4 voxelData, vec3 rayDirection, vec3 hitPoint, vec3 hitNo
     vec4 shadingMultiplier = calculateShadingMultiplier(hitPoint, hitNormal);
 
     #ifdef DO_REFLECTIONS
-        // Calculate reflections
         vec4 reflectionSample = calculateReflectionColor(rayDirection, hitPoint, hitNormal);
         float reflectAmount = calculateFresnelReflectAmount(rayDirection, hitNormal, REFRACTIVE_INDEX_AIR, REFRACTIVE_INDEX_OBJECT);
 
-        return mix(shadingMultiplier * voxelData, reflectionSample, reflectAmount);
+        return shadingMultiplier * mix(voxelData, reflectionSample, reflectAmount);
     #else
         return shadingMultiplier * voxelData;
     #endif
@@ -360,14 +399,6 @@ vec2 getUV(vec2 texCoord) {
 void doNormalRaytrace() {
     vec2 uv = getUV(vertexTexCoord);
     fragColor = performRaytrace(uv);
-}
-
-float frand(vec2 seed){
-    return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-vec2 v2rand(vec2 seed) {
-    return vec2(frand(seed.xy), frand(-seed.yx * 234.4589));
 }
 
 void doRaytraceWithAntialiasing() {
