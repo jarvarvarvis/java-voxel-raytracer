@@ -27,10 +27,14 @@ const float OBJECT_REFLECTIVITY = 0.05;
 #define DO_ANTIALIASING
 //#undef DO_ANTIALIASING
 
+// Number of random samples for jittered anti-aliasing
 const int ANTIALIASING_SAMPLES = 2;
 
 // Position of the light source
-const vec3 LIGHT_POSITION = vec3(-100, 200, 100);
+const vec3 LIGHT_POSITION = vec3(-100, 200, 8);
+
+// Shade of the shadow
+const float SHADOW_SHADE = 0.03;
 
 // Convert output color (RGB) to sRGB
 #define CONVERT_TO_SRGB
@@ -210,7 +214,8 @@ vec4 calculateDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 normal) {
     vec3 lightVector = lightPos - hitPoint;
     float lightInclination = dot(normal, normalize(lightVector));
 
-    return lightInclination > 0.0 ? vec4(lightInclination, lightInclination, lightInclination, 1) : vec4(.05, .05, .05, 1.);
+    float shadeFactor = max(SHADOW_SHADE, lightInclination);
+    return vec4(shadeFactor, shadeFactor, shadeFactor, 1.);
 }
 
 vec4 calculateShadowOrDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 normal) {
@@ -219,7 +224,7 @@ vec4 calculateShadowOrDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 norma
     vec3 normal2;
     bool hasIntersection2 = intersectWorld(hitPoint, normalize(lightPos - hitPoint), voxelData2, distance2, normal2);
     if (hasIntersection2) {
-        return vec4(.05, .05, .05, 1.);
+        return vec4(SHADOW_SHADE, SHADOW_SHADE, SHADOW_SHADE, 1.);
     }
 
     return calculateDiffuseMultiplier(lightPos, hitPoint, normal);
