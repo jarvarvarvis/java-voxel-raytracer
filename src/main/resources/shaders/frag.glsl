@@ -45,6 +45,10 @@ const vec3 LIGHT_POSITION = vec3(-100, 200, 8);
 // Shade of the shadow
 const float SHADOW_SHADE = 0.03;
 
+// Specular highlights
+const float PHONG_EXPONENT = 100;
+const float SPECULAR_STRENGTH_MULTIPLIER = 2.;
+
 // Convert output color (RGB) to sRGB
 #define CONVERT_TO_SRGB
 //#undef CONVERT_TO_SRGB
@@ -236,28 +240,33 @@ bool intersectWorld(vec3 rayOrigin, vec3 rayDirection, out vec4 voxelData, out f
 
 
 
-vec4 calculateDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 normal) {
-    vec3 lightVector = lightPos - hitPoint;
-    float lightInclination = dot(normal, normalize(lightVector));
+vec4 calculateDiffuseMultiplier(vec3 lightVector, vec3 normal) {
+    float lightInclination = dot(normal, lightVector);
 
     float shadeFactor = max(SHADOW_SHADE, lightInclination);
     return vec4(shadeFactor, shadeFactor, shadeFactor, 1.);
 }
 
-vec4 calculateShadowOrDiffuseMultiplier(vec3 lightPos, vec3 hitPoint, vec3 normal) {
+vec4 calculateSpecularMultiplier(vec3 lightVector, vec3 normal, vec3 rayDirection) {
+    vec3 reflectedDirection = reflect(rayDirection, normal);
+    float intensity = pow(dot(reflectedDirection, lightVector), PHONG_EXPONENT);
+    return vec4(intensity, intensity, intensity, 1.);
+}
+
+vec4 calculateShadingMultiplier(vec3 hitPoint, vec3 normal, vec3 rayDirection) {
+    vec3 lightVector = normalize(LIGHT_POSITION - hitPoint);
+
     vec4 voxelData2;
     float distance2;
     vec3 normal2;
-    bool hasIntersection2 = intersectWorld(hitPoint, normalize(lightPos - hitPoint), voxelData2, distance2, normal2);
+    bool hasIntersection2 = intersectWorld(hitPoint, lightVector, voxelData2, distance2, normal2);
     if (hasIntersection2) {
         return vec4(SHADOW_SHADE, SHADOW_SHADE, SHADOW_SHADE, 1.);
     }
 
-    return calculateDiffuseMultiplier(lightPos, hitPoint, normal);
-}
-
-vec4 calculateShadingMultiplier(vec3 hitPoint, vec3 normal) {
-    return calculateShadowOrDiffuseMultiplier(LIGHT_POSITION, hitPoint, normal);
+    vec4 specular = calculateSpecularMultiplier(lightVector, normal, rayDirection);
+    vec4 diffuse = calculateDiffuseMultiplier(lightVector, normal);
+    return diffuse + specular * SPECULAR_STRENGTH_MULTIPLIER;
 }
 
 float calculateFresnelReflectAmount(vec3 incident, vec3 normal, float refractiveIndexEnter, float refractiveIndexLeave) {
@@ -294,7 +303,7 @@ vec4 calculateReflectedRayColor(vec3 hitPoint, vec3 reflectedDirection) {
     }
 
     vec3 reflectHitPoint = hitPoint + reflectedDistance * reflectedDirection;
-    return reflectedVoxelData * calculateShadingMultiplier(reflectHitPoint, reflectedNormal);
+    return reflectedVoxelData * calculateShadingMultiplier(reflectHitPoint, reflectedNormal, reflectedDirection);
 }
 
 vec4 calculateReflectionColor(vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
@@ -315,7 +324,7 @@ vec4 calculateReflectionColor(vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) 
 
 vec4 calculateColor(vec4 voxelData, vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) {
     // Calculate shading
-    vec4 shadingMultiplier = calculateShadingMultiplier(hitPoint, hitNormal);
+    vec4 shadingMultiplier = calculateShadingMultiplier(hitPoint, hitNormal, rayDirection);
 
     #ifdef DO_REFLECTIONS
         vec4 reflectionSample = calculateReflectionColor(rayDirection, hitPoint, hitNormal);
