@@ -231,11 +231,7 @@ bool intersectWorld(vec3 rayOrigin, vec3 rayDirection, out vec4 voxelData, out f
         return false;
     }
 
-    if (!traverseWorld(rayOrigin, rayDirection, tNear, tFar, voxelData, outerSideNormalAxis, normal, distance)) {
-        return false;
-    }
-
-    return true;
+    return traverseWorld(rayOrigin, rayDirection, tNear, tFar, voxelData, outerSideNormalAxis, normal, distance);
 }
 
 
@@ -310,9 +306,10 @@ vec4 calculateReflectionColor(vec3 rayDirection, vec3 hitPoint, vec3 hitNormal) 
     #ifdef DO_GLOSS
         // Sample reflections from the same starting point with randomly offset direction vectors
         vec4 reflectionSampleSum = vec4(0.0);
+        vec3 reflectedDirection = reflect(rayDirection, hitNormal);
         for (int i = 0; i < GLOSS_SAMPLES; ++i) {
             vec3 offset = v3rand(hitPoint);
-            vec3 reflectedDirection = reflect(rayDirection, hitNormal) + offset * OBJECT_GLOSSINESS;
+            vec3 reflectedDirection = reflectedDirection + offset * OBJECT_GLOSSINESS;
             reflectionSampleSum += calculateReflectedRayColor(hitPoint, reflectedDirection);
         }
         return reflectionSampleSum / GLOSS_SAMPLES;
