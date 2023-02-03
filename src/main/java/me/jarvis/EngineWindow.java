@@ -12,7 +12,7 @@ import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
 
-public class PixelEngineWindow {
+public class EngineWindow {
 
     private int width, height;
     private final long handle;
@@ -29,7 +29,7 @@ public class PixelEngineWindow {
             .set(windowHandle);
     }
 
-    public PixelEngineWindow(int width, int height, String name) {
+    public EngineWindow(int width, int height, String name) {
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_FALSE);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
