@@ -193,7 +193,7 @@ bool traverseWorld(vec3 rayOrigin, vec3 rayDirection, float tNear, float tFar, o
         // Sample world and return if data.z == 0
         vec4 voxelData;
         if (sampleWorld(currentVoxel, voxelData)) {
-            if (voxelData.z != 0) {
+            if (voxelData.w != 0) {
                 distance = tNear + distance;
                 color = voxelData;
                 normal = calculateNormal(normalAxis, step);
