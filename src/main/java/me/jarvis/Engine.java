@@ -20,11 +20,11 @@ import org.lwjgl.system.Callback;
 import java.io.IOException;
 import java.time.Instant;
 
-public class PixelEngine {
+public class Engine {
 
-    public static Logger log = LogManager.getLogger(PixelEngine.class);
+    public static Logger log = LogManager.getLogger(Engine.class);
 
-    private final PixelEngineWindow window;
+    private final EngineWindow window;
 
     private final Camera camera;
     private final RaytraceContext raytraceContext;
@@ -36,8 +36,8 @@ public class PixelEngine {
             throw new IllegalStateException("Unable to initialize GLFW");
     }
 
-    public PixelEngine(int width, int height) throws IOException {
-        this.window = new PixelEngineWindow(width, height, "PixelEngine");
+    public Engine(int width, int height) throws IOException {
+        this.window = new EngineWindow(width, height, "Raytracer");
 
         String glVersion = GL33.glGetString(GL33.GL_VERSION);
         log.info("OpenGL version: {}", glVersion);
@@ -109,7 +109,7 @@ public class PixelEngine {
 
     private void updateTitle() {
         Vector3 camPosition = this.camera.getPosition();
-        String title = String.format("PixelEngine - [Position] (%.3f, %.3f, %.3f) [Rotation] Pitch = %.3f, Yaw = %.3f",
+        String title = String.format("Raytracer - [Position] (%.3f, %.3f, %.3f) [Rotation] Pitch = %.3f, Yaw = %.3f",
             camPosition.x(), camPosition.y(), camPosition.z(),
             this.camera.getPitch(), this.camera.getYaw());
         GLFW.glfwSetWindowTitle(this.window.getHandle(), title);
