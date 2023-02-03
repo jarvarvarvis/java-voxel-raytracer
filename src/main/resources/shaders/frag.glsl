@@ -42,6 +42,10 @@ const int ANTIALIASING_SAMPLES = 2;
 // Position of the light source
 const vec3 LIGHT_POSITION = vec3(-100, 200, 8);
 
+// Do specular highlights
+#define DO_SPECULAR_HIGHLIGHTS
+//#undef DO_SPECULAR_HIGHLIGHTS
+
 // Shade of the shadow
 const float SHADOW_SHADE = 0.03;
 
@@ -260,9 +264,13 @@ vec4 calculateShadingMultiplier(vec3 hitPoint, vec3 normal, vec3 rayDirection) {
         return vec4(SHADOW_SHADE, SHADOW_SHADE, SHADOW_SHADE, 1.);
     }
 
+    #ifdef DO_SPECULAR_HIGHLIGHTS
     vec4 specular = calculateSpecularMultiplier(lightVector, normal, rayDirection);
     vec4 diffuse = calculateDiffuseMultiplier(lightVector, normal);
     return diffuse + specular * SPECULAR_STRENGTH_MULTIPLIER;
+    #else
+    return calculateDiffuseMultiplier(lightVector, normal);
+    #endif
 }
 
 float calculateFresnelReflectAmount(vec3 incident, vec3 normal, float refractiveIndexEnter, float refractiveIndexLeave) {
