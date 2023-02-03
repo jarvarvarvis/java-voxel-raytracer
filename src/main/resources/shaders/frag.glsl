@@ -11,25 +11,7 @@ uniform ivec3 worldSize;
 uniform vec3 cameraOrigin;
 uniform vec3 cameraRotation;
 
-//////////////////// Parameters ////////////////////
-
-// Fresnel calculations
-const float REFRACTIVE_INDEX_AIR =  1.00029;
-const float REFRACTIVE_INDEX_OBJECT = 1.125;
-const float OBJECT_REFLECTIVITY = 0.45;
-
-// Use reflections
-#define DO_REFLECTIONS
-//#undef DO_REFLECTIONS
-
-// Do glossy reflections
-// NOTE: Has a noticeable performance impact
-#define DO_GLOSS
-//#undef DO_GLOSS
-
-// Glossiness factor
-const float OBJECT_GLOSSINESS = 0.04f;
-const int GLOSS_SAMPLES = 2;
+//////////////////// Constants ////////////////////
 
 // Do Jittered Anti-Aliasing (random)
 // NOTE: Has a noticeable performance impact
@@ -38,6 +20,8 @@ const int GLOSS_SAMPLES = 2;
 
 // Number of random samples for jittered anti-aliasing
 const int ANTIALIASING_SAMPLES = 2;
+
+
 
 // Position of the light source
 const vec3 LIGHT_POSITION = vec3(-100, 200, 8);
@@ -52,6 +36,28 @@ const float SHADOW_SHADE = 0.03;
 // Specular highlights
 const float PHONG_EXPONENT = 100;
 const float SPECULAR_STRENGTH_MULTIPLIER = 2.;
+
+
+
+// Fresnel calculations
+const float REFRACTIVE_INDEX_AIR =  1.00029;
+const float REFRACTIVE_INDEX_OBJECT = 1.125;
+const float OBJECT_REFLECTIVITY = 0.45;
+
+// Do reflections
+#define DO_REFLECTIONS
+//#undef DO_REFLECTIONS
+
+// Do glossy reflections
+// NOTE: Has a noticeable performance impact
+#define DO_GLOSS
+//#undef DO_GLOSS
+
+// Glossiness factor
+const float OBJECT_GLOSSINESS = 0.04f;
+const int GLOSS_SAMPLES = 2;
+
+
 
 // Convert output color (RGB) to sRGB
 #define CONVERT_TO_SRGB
