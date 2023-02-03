@@ -247,9 +247,14 @@ vec4 calculateDiffuseMultiplier(vec3 lightVector, vec3 normal) {
     return vec4(shadeFactor, shadeFactor, shadeFactor, 1.);
 }
 
+float saturate(float value) {
+    return clamp(value, 0.0, 1.0);
+}
+
 vec4 calculateSpecularMultiplier(vec3 lightVector, vec3 normal, vec3 rayDirection) {
     vec3 reflectedDirection = reflect(rayDirection, normal);
-    float intensity = pow(dot(reflectedDirection, lightVector), PHONG_EXPONENT);
+    float baseIntensity = saturate(dot(reflectedDirection, lightVector));
+    float intensity = pow(baseIntensity, PHONG_EXPONENT);
     return vec4(intensity, intensity, intensity, 1.);
 }
 
@@ -306,7 +311,7 @@ vec4 calculateReflectedRayColor(vec3 hitPoint, vec3 reflectedDirection) {
         return getBackground(reflectedDirection);
     }
 
-    vec3 reflectHitPoint = hitPoint + reflectedDistance * reflectedDirection;
+    vec3 reflectHitPoint = hitPoint + reflectedDirection * (reflectedDistance - 0.001);
     return reflectedVoxelData * calculateShadingMultiplier(reflectHitPoint, reflectedNormal, reflectedDirection);
 }
 
