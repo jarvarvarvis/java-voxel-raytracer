@@ -10,7 +10,7 @@ import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 public class PixelEngineWindow {
 
@@ -57,7 +57,7 @@ public class PixelEngineWindow {
         int width = event.getWidth();
         int height = event.getHeight();
 
-        GL30.glViewport(0, 0, width, height);
+        GL33.glViewport(0, 0, width, height);
         this.width = width;
         this.height = height;
     }

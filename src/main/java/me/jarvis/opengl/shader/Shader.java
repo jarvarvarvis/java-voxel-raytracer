@@ -1,7 +1,7 @@
 package me.jarvis.opengl.shader;
 
 import me.jarvis.opengl.base.GLObject;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 import javax.annotation.Nonnull;
 
@@ -10,7 +10,7 @@ public class Shader extends GLObject {
     private final int shaderType;
 
     public Shader(int shaderType) {
-        super(GL30.glCreateShader(shaderType));
+        super(GL33.glCreateShader(shaderType));
         this.shaderType = shaderType;
     }
 
@@ -19,22 +19,22 @@ public class Shader extends GLObject {
     }
 
     public void setSourceCode(@Nonnull CharSequence source) {
-        GL30.glShaderSource(this.getHandle(), source);
+        GL33.glShaderSource(this.getHandle(), source);
     }
 
     public void compile() {
-        GL30.glCompileShader(this.getHandle());
+        GL33.glCompileShader(this.getHandle());
         this.checkStatus();
     }
 
     private void checkStatus() {
-        int status = GL30.glGetShaderi(this.getHandle(), GL30.GL_COMPILE_STATUS);
-        if (status != GL30.GL_TRUE)
-            throw new RuntimeException(GL30.glGetShaderInfoLog(this.getHandle()));
+        int status = GL33.glGetShaderi(this.getHandle(), GL33.GL_COMPILE_STATUS);
+        if (status != GL33.GL_TRUE)
+            throw new RuntimeException(GL33.glGetShaderInfoLog(this.getHandle()));
     }
 
     @Override
     public void dispose() {
-        GL30.glDeleteShader(this.getHandle());
+        GL33.glDeleteShader(this.getHandle());
     }
 }

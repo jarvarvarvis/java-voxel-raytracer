@@ -4,7 +4,7 @@ import me.jarvis.opengl.objects.IBO;
 import me.jarvis.opengl.objects.VAO;
 import me.jarvis.opengl.shader.ShaderProgram;
 import me.jarvis.opengl.texture.Texture2D;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 public class TexturedMesh extends Mesh {
 
@@ -20,7 +20,7 @@ public class TexturedMesh extends Mesh {
         this.texture.bind();
         super.vao.bind();
         super.ibo.bind();
-        GL30.glDrawElements(GL30.GL_TRIANGLES, super.vertexCount, GL30.GL_UNSIGNED_INT, 0);
+        GL33.glDrawElements(GL33.GL_TRIANGLES, super.vertexCount, GL33.GL_UNSIGNED_INT, 0);
     }
 
     @Override

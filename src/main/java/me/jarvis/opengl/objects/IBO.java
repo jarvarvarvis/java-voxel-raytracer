@@ -2,26 +2,26 @@ package me.jarvis.opengl.objects;
 
 import me.jarvis.opengl.base.Bindable;
 import me.jarvis.opengl.base.GLObject;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 public class IBO extends GLObject implements Bindable {
 
     public IBO() {
-        super(GL30.glGenBuffers());
+        super(GL33.glGenBuffers());
     }
 
     @Override
     public void bind() {
-        GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, this.getHandle());
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, this.getHandle());
     }
 
     @Override
     public void unbind() {
-        GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, 0);
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     @Override
     public void dispose() {
-        GL30.glDeleteBuffers(this.getHandle());
+        GL33.glDeleteBuffers(this.getHandle());
     }
 }

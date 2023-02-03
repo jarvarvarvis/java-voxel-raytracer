@@ -4,7 +4,7 @@ import me.jarvis.opengl.base.Disposable;
 import me.jarvis.opengl.objects.IBO;
 import me.jarvis.opengl.objects.VAO;
 import me.jarvis.opengl.shader.ShaderProgram;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 public class Mesh implements Disposable {
 
@@ -29,7 +29,7 @@ public class Mesh implements Disposable {
         this.shader.bind();
         this.vao.bind();
         this.ibo.bind();
-        GL30.glDrawElements(GL30.GL_TRIANGLES, this.vertexCount, GL30.GL_UNSIGNED_INT, 0);
+        GL33.glDrawElements(GL33.GL_TRIANGLES, this.vertexCount, GL33.GL_UNSIGNED_INT, 0);
     }
 
     @Override

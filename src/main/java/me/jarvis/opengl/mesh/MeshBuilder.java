@@ -6,7 +6,7 @@ import me.jarvis.opengl.objects.VBO;
 import me.jarvis.opengl.shader.ShaderProgram;
 import me.jarvis.opengl.texture.Texture2D;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -55,7 +55,7 @@ public class MeshBuilder {
         IntBuffer nativeIndexBuffer = BufferUtils.createIntBuffer(this.indices.length);
         nativeIndexBuffer.put(this.indices).flip();
 
-        GL30.glBufferData(GL30.GL_ELEMENT_ARRAY_BUFFER, nativeIndexBuffer, GL30.GL_STATIC_DRAW);
+        GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, nativeIndexBuffer, GL33.GL_STATIC_DRAW);
         ibo.unbind();
         return ibo;
     }
@@ -72,14 +72,14 @@ public class MeshBuilder {
             FloatBuffer nativeData = BufferUtils.createFloatBuffer(data.length);
             nativeData.put(data).flip();
 
-            GL30.glBufferData(GL30.GL_ARRAY_BUFFER, nativeData, GL30.GL_STATIC_DRAW);
-            GL30.glVertexAttribPointer(currentAttributeId,
+            GL33.glBufferData(GL33.GL_ARRAY_BUFFER, nativeData, GL33.GL_STATIC_DRAW);
+            GL33.glVertexAttribPointer(currentAttributeId,
                 buffer.getComponents(),
-                GL30.GL_FLOAT,
+                GL33.GL_FLOAT,
                 false,
                 0,
                 0);
-            GL30.glEnableVertexAttribArray(currentAttributeId);
+            GL33.glEnableVertexAttribArray(currentAttributeId);
 
             vbo.unbind();
 

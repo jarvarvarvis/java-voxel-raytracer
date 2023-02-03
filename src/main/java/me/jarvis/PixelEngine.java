@@ -13,7 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
 
@@ -39,6 +39,9 @@ public class PixelEngine {
     public PixelEngine(int width, int height) throws IOException {
         this.window = new PixelEngineWindow(width, height, "PixelEngine");
 
+        String glVersion = GL33.glGetString(GL33.GL_VERSION);
+        log.info("OpenGL version: {}", glVersion);
+        
         GLFW.glfwSetInputMode(this.window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
 
         World world = new World(16, 16, 16);
@@ -118,8 +121,8 @@ public class PixelEngine {
             log.warn("Debug mode is not available!");
 
         while (!this.window.shouldClose()) {
-            GL30.glClear(GL30.GL_COLOR_BUFFER_BIT);
-            GL30.glClearColor(0, 0, 0, 1);
+            GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
+            GL33.glClearColor(0, 0, 0, 1);
 
             raytraceContext.draw(this.window.getWidth(), this.window.getHeight());
             this.window.swapBuffers();

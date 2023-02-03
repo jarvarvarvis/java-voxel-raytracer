@@ -2,7 +2,7 @@ package me.jarvis.opengl.objects;
 
 import me.jarvis.opengl.base.Bindable;
 import me.jarvis.opengl.base.GLObject;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ public class VAO extends GLObject implements Bindable {
     private final List<VBO> vboList;
 
     public VAO() {
-        super(GL30.glGenVertexArrays());
+        super(GL33.glGenVertexArrays());
         this.vboList = new ArrayList<>();
     }
 
@@ -23,12 +23,12 @@ public class VAO extends GLObject implements Bindable {
 
     @Override
     public void bind() {
-        GL30.glBindVertexArray(this.getHandle());
+        GL33.glBindVertexArray(this.getHandle());
     }
 
     @Override
     public void unbind() {
-        GL30.glBindVertexArray(0);
+        GL33.glBindVertexArray(0);
     }
 
     @Override
@@ -36,6 +36,6 @@ public class VAO extends GLObject implements Bindable {
         for (VBO vbo : this.vboList) {
             vbo.dispose();
         }
-        GL30.glDeleteVertexArrays(this.getHandle());
+        GL33.glDeleteVertexArrays(this.getHandle());
     }
 }
