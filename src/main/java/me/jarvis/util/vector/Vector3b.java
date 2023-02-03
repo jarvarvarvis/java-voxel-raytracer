@@ -2,7 +2,7 @@ package me.jarvis.util.vector;
 
 import java.util.Objects;
 
-public class Vector3b {
+public final class Vector3b {
     private final byte x, y, z;
 
     public Vector3b(byte x, byte y, byte z) {

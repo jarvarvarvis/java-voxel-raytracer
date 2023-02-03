@@ -2,7 +2,7 @@ package me.jarvis.util.vector;
 
 import java.util.Objects;
 
-public class Vector4b {
+public final class Vector4b {
     private final byte x, y, z, w;
 
     public Vector4b(byte x, byte y, byte z, byte w) {
@@ -27,11 +27,9 @@ public class Vector4b {
     public byte x() {
         return x;
     }
-
     public byte y() {
         return y;
     }
-
     public byte z() {
         return z;
     }
@@ -44,11 +42,12 @@ public class Vector4b {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Vector4b vector3b = (Vector4b) o;
+        Vector4b vector4b = (Vector4b) o;
 
-        if (x != vector3b.x) return false;
-        if (y != vector3b.y) return false;
-        return z == vector3b.z;
+        if (x != vector4b.x) return false;
+        if (y != vector4b.y) return false;
+        if (z != vector4b.z) return false;
+        return w == vector4b.w;
     }
 
     @Override
@@ -58,9 +57,11 @@ public class Vector4b {
 
     @Override
     public String toString() {
-        return "Vector3b(" +
-            "x=" + x + ", " +
-            "y=" + y + ", " +
-            "z=" + z + ")";
+        return "Vector4b{" +
+            "x=" + x +
+            ", y=" + y +
+            ", z=" + z +
+            ", w=" + w +
+            '}';
     }
 }
