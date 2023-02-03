@@ -67,6 +67,9 @@ const int GLOSS_SAMPLES = 2;
 
 
 
+float saturate(float value) {
+    return clamp(value, 0.0, 1.0);
+}
 
 float frand(vec2 seed){
     return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
@@ -253,10 +256,6 @@ vec4 calculateDiffuseMultiplier(vec3 lightVector, vec3 normal) {
     return vec4(shadeFactor, shadeFactor, shadeFactor, 1.);
 }
 
-float saturate(float value) {
-    return clamp(value, 0.0, 1.0);
-}
-
 vec4 calculateSpecularMultiplier(vec3 lightVector, vec3 normal, vec3 rayDirection) {
     vec3 reflectedDirection = reflect(rayDirection, normal);
     float baseIntensity = saturate(dot(reflectedDirection, lightVector));
@@ -367,20 +366,6 @@ vec4 castRay(vec3 rayOrigin, vec3 rayDirection) {
 
 
 
-mat3 pitchYawMatrix(float pitch, float yaw) {
-    mat3 yawMatrix = mat3(
-        cos(yaw), 0, sin(yaw),
-        0, 1, 0,
-        -sin(yaw), 0, cos(yaw)
-    );
-    mat3 pitchMatrix = mat3(
-        1, 0, 0,
-        0, cos(pitch), -sin(pitch),
-        0, sin(pitch), cos(pitch)
-    );
-    return yawMatrix * pitchMatrix;
-}
-
 vec3 lessThan(vec3 f, float value) {
     return vec3(
         f.x < value ? 1.0f : 0.0f,
@@ -399,6 +384,28 @@ vec3 linearToSRGB(vec3 rgb) {
     );
 }
 
+mat3 pitchYawMatrix(float pitch, float yaw) {
+    mat3 yawMatrix = mat3(
+        cos(yaw), 0, sin(yaw),
+        0, 1, 0,
+        -sin(yaw), 0, cos(yaw)
+    );
+    mat3 pitchMatrix = mat3(
+        1, 0, 0,
+        0, cos(pitch), -sin(pitch),
+        0, sin(pitch), cos(pitch)
+    );
+    return yawMatrix * pitchMatrix;
+}
+
+vec2 getUV(vec2 texCoord) {
+    vec2 uv = texCoord;
+    uv = uv * 2.0 - 1.0; // Transform from [0,1] to [-1,1];
+    uv.x *= float(iResolution.x) / iResolution.y; // Aspect fix
+    uv *= 0.45; // FOV
+    return uv;
+}
+
 vec4 performRaytrace(vec2 rayStartOnScreen) {
     float pitch = cameraRotation.x;
     float yaw = cameraRotation.y;
@@ -409,14 +416,6 @@ vec4 performRaytrace(vec2 rayStartOnScreen) {
         color = vec4(linearToSRGB(color.xyz), color.w);
     #endif
     return color;
-}
-
-vec2 getUV(vec2 texCoord) {
-    vec2 uv = texCoord;
-    uv = uv * 2.0 - 1.0; // Transform from [0,1] to [-1,1];
-    uv.x *= float(iResolution.x) / iResolution.y; // Aspect fix
-    uv *= 0.45; // FOV
-    return uv;
 }
 
 
