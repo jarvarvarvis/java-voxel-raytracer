@@ -9,9 +9,9 @@ public class Main {
     public static final Logger log = LogManager.getLogger(Main.class);
 
 	public static void main(String[] args) throws IOException {
-        PixelEngine.init();
+        Engine.init();
         log.info("Engine initialization complete");
-		PixelEngine engine = new PixelEngine(1600, 900);
+		Engine engine = new Engine(1600, 900);
         log.info("Engine context initialized, running...");
         engine.run();
 	}
