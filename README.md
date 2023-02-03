@@ -18,7 +18,7 @@ The shader source code is located in src/main/resources/shaders/. <br>
 
 [The heart of the raytracer, frag.glsl](src/main/resources/shaders/frag.glsl)
 
-ou can set some parameters there yourself, mainly the light source position (only one is
+You can set some parameters there yourself, mainly the light source position (only one is
 present at the moment) and some reflection parameters.
 
 ## Examples
